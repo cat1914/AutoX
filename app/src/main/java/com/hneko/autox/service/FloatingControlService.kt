@@ -8,7 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -70,6 +72,11 @@ class FloatingControlService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         recordingManager = RecordingManager(this)
+        recordingManager.onError = { msg ->
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            }
+        }
         executor = OperationExecutor()
 
         startForeground(NOTI_ID, buildNotification())

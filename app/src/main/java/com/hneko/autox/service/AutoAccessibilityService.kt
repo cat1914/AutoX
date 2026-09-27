@@ -1,6 +1,7 @@
 package com.hneko.autox.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.graphics.PointF
 import android.view.MotionEvent
 import android.os.Build
@@ -37,6 +38,11 @@ class AutoAccessibilityService : AccessibilityService() {
 
         /** 录制回调 */
         var recordingCallback: RecordingCallback? = null
+
+        /** 服务是否曾经收到过 MotionEvent（用于判断无障碍录制是否可用） */
+        @Volatile
+        var hasReceivedMotionEvent: Boolean = false
+            private set
     }
 
     // 录制状态
@@ -49,7 +55,15 @@ class AutoAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-        Log.i(TAG, "无障碍服务已连接")
+        // 编程方式确保 flagSendMotionEvents 生效（部分国产 ROM 不读取 XML 配置）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val info = serviceInfo
+            info.flags = info.flags or AccessibilityServiceInfo.FLAG_SEND_MOTION_EVENTS
+            serviceInfo = info
+            Log.i(TAG, "无障碍服务已连接，已设置 FLAG_SEND_MOTION_EVENTS")
+        } else {
+            Log.i(TAG, "无障碍服务已连接")
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -89,11 +103,12 @@ class AutoAccessibilityService : AccessibilityService() {
     // ---------------- 触摸事件捕获（API 31+） ----------------
 
     override fun onMotionEvent(event: MotionEvent) {
+        // 方法入口日志：确认系统是否回调了 onMotionEvent（部分 ROM 不会调用）
+        Log.d(TAG, "onMotionEvent 被调用 action=${event.actionMasked} x=${event.x} y=${event.y} recording=$isRecording")
+        hasReceivedMotionEvent = true
         super.onMotionEvent(event)
         if (!isRecording) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-
-        Log.d(TAG, "onMotionEvent action=${event.actionMasked} x=${event.x} y=${event.y}")
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {

@@ -93,6 +93,8 @@ class AutoAccessibilityService : AccessibilityService() {
         if (!isRecording) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
 
+        Log.d(TAG, "onMotionEvent action=${event.actionMasked} x=${event.x} y=${event.y}")
+
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 downTime = System.currentTimeMillis()
@@ -129,6 +131,7 @@ class AutoAccessibilityService : AccessibilityService() {
                     duration = duration,
                     type = type
                 )
+                Log.d(TAG, "捕获动作: type=$type start=(${start.x},${start.y}) end=(${end.x},${end.y}) duration=${duration}ms")
                 recordingCallback?.onActionCaptured(action)
                 downPoint = null
                 pathPoints.clear()

@@ -89,7 +89,7 @@
             android:name=".receiver.SchedulerReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.autox.assistant.ACTION_TRIGGER_REPLAY" />
+                <action android:name="com.hneko.autox.ACTION_TRIGGER_REPLAY" />
             </intent-filter>
         </receiver>
 

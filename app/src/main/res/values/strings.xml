@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AutoX</string>
+    <string name="accessibility_service_label">AutoX 自动化服务</string>
+    <string name="accessibility_service_desc">用于录制用户触摸操作并在回放时模拟点击/滑动。开启后可通过无障碍服务捕获全局触摸事件（用于录制）以及通过 dispatchGesture 回放操作。</string>
+</resources>

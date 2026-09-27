@@ -7,4 +7,4 @@
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_service_desc"
     android:notificationTimeout="100"
-    android:settingsActivity="com.autox.assistant.ui.MainActivity" />
+    android:settingsActivity="com.hneko.autox.ui.MainActivity" />

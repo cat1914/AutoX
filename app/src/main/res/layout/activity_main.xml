@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AutoX - 自动化操作"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:paddingBottom="8dp" />
+
+        <!-- 权限状态区 -->
+        <TextView
+            style="@style/SectionTitle"
+            android:text="权限状态" />
+
+        <LinearLayout style="@style/Card">
+            <TextView android:id="@+id/tvOverlay" style="@style/PermRow" />
+            <TextView android:id="@+id/tvAccessibility" style="@style/PermRow" />
+            <TextView android:id="@+id/tvNotification" style="@style/PermRow" />
+            <TextView android:id="@+id/tvBattery" style="@style/PermRow" />
+            <TextView android:id="@+id/tvShizuku" style="@style/PermRow" />
+            <TextView android:id="@+id/tvExactAlarm" style="@style/PermRow" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+            <Button android:id="@+id/btnReqAll"
+                style="@style/ActionBtn"
+                android:text="一键申请权限"
+                android:layout_weight="1" />
+            <Button android:id="@+id/btnRefreshPerm"
+                style="@style/ActionBtn"
+                android:text="刷新状态"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- 悬浮窗控制 -->
+        <TextView style="@style/SectionTitle" android:text="悬浮窗控制" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btnShowFloat"
+                style="@style/ActionBtn"
+                android:text="显示悬浮窗"
+                android:layout_weight="1" />
+            <Button android:id="@+id/btnHideFloat"
+                style="@style/ActionBtn"
+                android:text="隐藏悬浮窗"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- 录制记录 -->
+        <TextView style="@style/SectionTitle" android:text="录制记录" />
+        <LinearLayout
+            android:id="@+id/recordsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <!-- 定时任务 -->
+        <TextView style="@style/SectionTitle" android:text="定时任务" />
+        <LinearLayout
+            android:id="@+id/tasksContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 触摸图标：一个圆角方块 + 圆点 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 C40.7,28 30,38.7 30,52 L30,72 C30,82.5 38.5,91 49,91 L59,91 C69.5,91 78,82.5 78,72 L78,52 C78,38.7 67.3,28 54,28 Z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M54,38 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M46,56 L62,56 L62,60 L46,60 Z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M46,65 L58,65 L58,69 L46,69 Z" />
+</vector>

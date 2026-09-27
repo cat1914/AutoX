@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.autox.assistant"
+    namespace = "com.hneko.autox"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.autox.assistant"
+        applicationId = "com.hneko.autox"
         minSdk = 30
         targetSdk = 34
         versionCode = 1

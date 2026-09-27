@@ -1,8 +1,8 @@
 package com.hneko.autox.service
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.MotionEvent
 import android.graphics.PointF
+import android.view.MotionEvent
 import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent

@@ -1,5 +1,7 @@
 package com.hneko.autox.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * 定时任务（按时间或日历触发回放）
  */

@@ -2,11 +2,9 @@ package com.hneko.autox.executor
 
 import android.util.Log
 import com.hneko.autox.model.TouchAction
+import com.hneko.autox.util.ShizukuShell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import rikka.shizuku.Shizuku
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 /**
  * 通过 Shizuku 执行 shell input 命令来模拟点击/滑动
@@ -18,11 +16,7 @@ class ShizukuExecutor : TouchExecutor {
         private const val TAG = "ShizukuExecutor"
     }
 
-    override fun isAvailable(): Boolean {
-        return runCatching {
-            Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
-        }.getOrDefault(false)
-    }
+    override fun isAvailable(): Boolean = ShizukuShell.isReady()
 
     override fun name(): String = "Shizuku"
 
@@ -32,15 +26,9 @@ class ShizukuExecutor : TouchExecutor {
             return@withContext false
         }
         val cmd = buildCommand(action) ?: return@withContext false
-        runCatching {
-            val process = Shizuku.newProcess(arrayOf("sh", "-c", cmd), null, null)
-            val output = BufferedReader(InputStreamReader(process.inputStream)).readText()
-            val code = process.waitFor()
-            if (code != 0) {
-                Log.e(TAG, "命令执行失败 code=$code output=$output")
-            }
-            code == 0
-        }.onFailure { Log.e(TAG, "执行异常", it) }.getOrDefault(false)
+        val output = ShizukuShell.execForOutput(cmd)
+        Log.d(TAG, "执行: $cmd -> ${output?.trim()}")
+        output != null
     }
 
     private fun buildCommand(action: TouchAction): String? {

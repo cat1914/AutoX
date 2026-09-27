@@ -3,15 +3,13 @@ package com.hneko.autox.recorder
 import android.graphics.PointF
 import android.util.Log
 import com.hneko.autox.model.TouchAction
+import com.hneko.autox.util.ShizukuShell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.math.abs
@@ -51,7 +49,7 @@ class ShizukuRecorder {
         private set
 
     fun start(screenW: Int, screenH: Int, cb: Callback): Boolean {
-        if (!isShizukuReady()) {
+        if (!ShizukuShell.isReady()) {
             Log.w(TAG, "Shizuku 不可用")
             return false
         }
@@ -79,54 +77,38 @@ class ShizukuRecorder {
         Log.i(TAG, "Shizuku 录制已停止")
     }
 
-    private fun isShizukuReady(): Boolean {
-        return runCatching {
-            Shizuku.pingBinder() &&
-                Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
-        }.getOrDefault(false)
-    }
-
     /** 探测触摸输入设备的 ABS 坐标范围 */
-    private suspend fun probeInputDevice() = withContext(Dispatchers.IO) {
+    private fun probeInputDevice() {
+        val output = ShizukuShell.execForOutput("getevent -lp") ?: return
         runCatching {
-            val process = Shizuku.newProcess(arrayOf("sh", "-c", "getevent -lp"), null, null)
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var inAbsSection = false
-            var line = reader.readLine()
-            while (line != null) {
+            output.lineSequence().forEach { line ->
                 if (line.contains("0035") || line.contains("ABS_MT_POSITION_X")) {
-                    val match = Regex("min\\s+(\\d+).*?max\\s+(\\d+)").find(line)
-                    if (match != null) {
-                        inputMinX = match.groupValues[1].toInt()
-                        inputMaxX = match.groupValues[2].toInt()
+                    Regex("min\\s+(\\d+).*?max\\s+(\\d+)").find(line)?.let {
+                        inputMinX = it.groupValues[1].toInt()
+                        inputMaxX = it.groupValues[2].toInt()
                     }
                 }
                 if (line.contains("0036") || line.contains("ABS_MT_POSITION_Y")) {
-                    val match = Regex("min\\s+(\\d+).*?max\\s+(\\d+)").find(line)
-                    if (match != null) {
-                        inputMinY = match.groupValues[1].toInt()
-                        inputMaxY = match.groupValues[2].toInt()
+                    Regex("min\\s+(\\d+).*?max\\s+(\\d+)").find(line)?.let {
+                        inputMinY = it.groupValues[1].toInt()
+                        inputMaxY = it.groupValues[2].toInt()
                     }
                 }
-                line = reader.readLine()
             }
-            process.waitFor()
             Log.i(TAG, "输入设备范围 X=[$inputMinX,$inputMaxX] Y=[$inputMinY,$inputMaxY]")
         }.onFailure { Log.e(TAG, "探测输入设备失败", it) }
     }
 
     private suspend fun runGetevent() {
-        val process = runCatching {
-            Shizuku.newProcess(arrayOf("sh", "-c", "getevent -lt"), null, null)
-        }.getOrElse {
-            Log.e(TAG, "启动 getevent 失败", it)
+        val process = ShizukuShell.exec("getevent -lt") ?: run {
+            Log.e(TAG, "启动 getevent 失败")
             return
         }
 
         val reader = BufferedReader(InputStreamReader(process.inputStream))
         var down = false
         var downTime = 0L
-        var recordStart = System.currentTimeMillis()
+        val recordStart = System.currentTimeMillis()
         var downX = 0f
         var downY = 0f
         var lastX = 0f

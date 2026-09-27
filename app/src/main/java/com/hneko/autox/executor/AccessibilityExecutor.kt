@@ -1,5 +1,6 @@
 package com.hneko.autox.executor
 
+import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.os.Build
@@ -47,7 +48,7 @@ class AccessibilityExecutor : TouchExecutor {
         val gesture = GestureDescription.Builder().addStroke(stroke).build()
 
         return suspendCancellableCoroutine { cont ->
-            val callback = object : android.accessibilityservice.GestureResultCallback() {
+            val callback = object : AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     if (cont.isActive) cont.resume(true)
                 }

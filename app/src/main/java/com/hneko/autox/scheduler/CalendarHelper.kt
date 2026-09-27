@@ -38,14 +38,14 @@ class CalendarHelper(private val context: Context) {
         val result = mutableListOf<CalendarEvent>()
 
         runCatching {
-            context.contentResolver.query(uri, projection, selection, selectionArgs, null)
-        }.getOrNull()?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                val title = cursor.getString(1) ?: ""
-                val begin = cursor.getLong(2)
-                val end = cursor.getLong(3)
-                result.add(CalendarEvent(id, title, begin, end))
+            context.contentResolver.query(uri, projection, selection, selectionArgs, null)?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    val title = cursor.getString(1) ?: ""
+                    val begin = cursor.getLong(2)
+                    val end = cursor.getLong(3)
+                    result.add(CalendarEvent(id, title, begin, end))
+                }
             }
         }.onFailure { Log.e(TAG, "查询日历失败", it) }
         return result

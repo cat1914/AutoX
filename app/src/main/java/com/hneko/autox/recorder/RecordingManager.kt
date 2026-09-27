@@ -42,7 +42,7 @@ class RecordingManager(private val context: Context) {
         // 优先使用无障碍录制（API 31+）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && AutoAccessibilityService.instance != null) {
             AutoAccessibilityService.instance?.let { svc ->
-                svc.recordingCallback = object : AutoAccessibilityService.RecordingCallback {
+                AutoAccessibilityService.recordingCallback = object : AutoAccessibilityService.RecordingCallback {
                     override fun onActionCaptured(action: TouchAction) {
                         actions.add(action)
                     }
@@ -86,7 +86,7 @@ class RecordingManager(private val context: Context) {
 
         if (usingAccessibility) {
             AutoAccessibilityService.instance?.stopRecording()
-            AutoAccessibilityService.instance?.recordingCallback = null
+            AutoAccessibilityService.recordingCallback = null
         } else {
             shizukuRecorder.stop()
         }
@@ -120,7 +120,7 @@ class RecordingManager(private val context: Context) {
         isRecording = false
         if (usingAccessibility) {
             AutoAccessibilityService.instance?.stopRecording()
-            AutoAccessibilityService.instance?.recordingCallback = null
+            AutoAccessibilityService.recordingCallback = null
         } else {
             shizukuRecorder.stop()
         }

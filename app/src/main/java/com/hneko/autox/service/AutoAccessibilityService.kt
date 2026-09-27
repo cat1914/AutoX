@@ -16,6 +16,11 @@ import kotlin.math.abs
  */
 class AutoAccessibilityService : AccessibilityService() {
 
+    interface RecordingCallback {
+        fun onActionCaptured(action: TouchAction)
+        fun onRecordingStopped()
+    }
+
     companion object {
         private const val TAG = "AutoAccessibility"
         private const val TAP_MOVE_THRESHOLD = 20f  // 超过此位移判定为滑动
@@ -32,11 +37,6 @@ class AutoAccessibilityService : AccessibilityService() {
 
         /** 录制回调 */
         var recordingCallback: RecordingCallback? = null
-
-        interface RecordingCallback {
-            fun onActionCaptured(action: TouchAction)
-            fun onRecordingStopped()
-        }
     }
 
     // 录制状态

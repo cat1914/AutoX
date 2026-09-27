@@ -21,6 +21,7 @@ import com.hneko.autox.scheduler.CalendarHelper
 import com.hneko.autox.scheduler.ScheduleManager
 import com.hneko.autox.service.FloatingControlService
 import com.hneko.autox.store.RecordStore
+import com.hneko.autox.util.LogCollector
 import com.hneko.autox.util.PermissionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -140,6 +141,19 @@ class MainActivity : AppCompatActivity() {
         binding.btnHideFloat.setOnClickListener {
             FloatingControlService.stop(this)
             Toast.makeText(this, "悬浮窗已隐藏", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnExportLog.setOnClickListener {
+            val uri = LogCollector.exportToDownloads(this)
+            if (uri != null) {
+                Toast.makeText(this, "日志已导出到 Downloads 目录", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "日志导出失败，请查看 logcat", Toast.LENGTH_LONG).show()
+            }
+        }
+        binding.btnLogInfo.setOnClickListener {
+            val info = LogCollector.getLogFileInfo()
+            val recent = LogCollector.getRecentLogs().lineSequence().count()
+            Toast.makeText(this, "日志文件: $info\n内存缓冲: $recent 行", Toast.LENGTH_LONG).show()
         }
     }
 

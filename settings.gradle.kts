@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AutoTouchAssistant"
+rootProject.name = "AutoX"
 include(":app")

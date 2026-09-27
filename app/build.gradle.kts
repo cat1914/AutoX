@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.autotouch.assistant"
+    namespace = "com.autox.assistant"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.autotouch.assistant"
-        minSdk = 26
+        applicationId = "com.autox.assistant"
+        minSdk = 30
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"

@@ -29,6 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
@@ -216,48 +217,174 @@ class MainActivity : AppCompatActivity() {
     // ---------------- 定时任务 ----------------
 
     private fun showScheduleDialog(recordId: String) {
-        val items = arrayOf("1分钟后执行一次", "5分钟后执行一次", "每5分钟重复", "创建日历事件触发")
-        AlertDialog.Builder(this)
-            .setTitle("选择定时方式")
-            .setItems(items) { _, which ->
-                val now = System.currentTimeMillis()
-                val task = when (which) {
-                    0 -> ScheduleTask(
-                        id = UUID.randomUUID().toString(), recordId = recordId,
-                        name = "一次:1分钟", type = ScheduleTask.ScheduleType.ONCE,
-                        triggerAtMillis = now + 60_000
-                    )
-                    1 -> ScheduleTask(
-                        id = UUID.randomUUID().toString(), recordId = recordId,
-                        name = "一次:5分钟", type = ScheduleTask.ScheduleType.ONCE,
-                        triggerAtMillis = now + 300_000
-                    )
-                    2 -> ScheduleTask(
-                        id = UUID.randomUUID().toString(), recordId = recordId,
-                        name = "重复:5分钟", type = ScheduleTask.ScheduleType.INTERVAL,
-                        triggerAtMillis = now + 300_000, intervalMillis = 300_000
-                    )
-                    else -> {
-                        // 日历事件触发：创建一个 1 分钟后的日历事件
-                        val calId = CalendarHelper(this).createEvent(
-                            "AutoX 回放", now + 60_000, now + 120_000
-                        )
+        val ctx = this
+        val cal = Calendar.getInstance()
+        // 初始时间设为 1 分钟后
+        cal.add(Calendar.MINUTE, 1)
+
+        // 类型选择
+        val typeLabels = arrayOf("一次性执行", "间隔重复", "日历事件触发")
+        var selectedType = 0
+
+        // 日期/时间选择器
+        val datePicker = android.widget.DatePicker(ctx).apply {
+            init(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), null)
+        }
+        val timePicker = android.widget.TimePicker(ctx).apply {
+            setIs24HourView(true)
+            hour = cal.get(Calendar.HOUR_OF_DAY)
+            minute = cal.get(Calendar.MINUTE)
+        }
+
+        // 间隔输入
+        val intervalInput = android.widget.EditText(ctx).apply {
+            hint = "重复间隔（分钟）"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText("5")
+        }
+        val intervalRow = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(TextView(ctx).apply { text = "间隔："; setPadding(0, 24, 8, 0) })
+            addView(intervalInput, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(TextView(ctx).apply { text = " 分钟"; setPadding(8, 24, 0, 0) })
+        }
+
+        // 日历事件选择
+        val calendarEvents = CalendarHelper(ctx).queryEvents(
+            System.currentTimeMillis(),
+            System.currentTimeMillis() + 30L * 24 * 3600 * 1000  // 未来 30 天
+        )
+        val eventLabels = if (calendarEvents.isEmpty()) {
+            arrayOf("（暂无日历事件，请先在系统日历中创建）")
+        } else {
+            calendarEvents.map {
+                val t = java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
+                    .format(java.util.Date(it.begin))
+                "$t  ${it.title}"
+            }.toTypedArray()
+        }
+        var selectedEventIdx = 0
+        val eventPicker = android.widget.Spinner(ctx).apply {
+            adapter = android.widget.ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, eventLabels)
+            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p: android.widget.AdapterView<*>?, v: android.view.View?, pos: Int, id: Long) {
+                    selectedEventIdx = pos
+                }
+                override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+            }
+        }
+
+        // 根布局
+        val root = android.widget.ScrollView(ctx)
+        val content = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 16, 32, 16)
+            addView(TextView(ctx).apply { text = "触发类型"; setPadding(0, 0, 0, 8) })
+        }
+
+        val typeGroup = android.widget.RadioGroup(ctx).apply {
+            typeLabels.forEachIndexed { i, label ->
+                addView(android.widget.RadioButton(ctx).apply {
+                    text = label
+                    id = i
+                    if (i == 0) isChecked = true
+                })
+            }
+            setOnCheckedChangeListener { _, checkedId ->
+                selectedType = checkedId
+                // 切换可见性
+                intervalRow.visibility = if (checkedId == 1) android.view.View.VISIBLE else android.view.View.GONE
+                eventPicker.visibility = if (checkedId == 2) android.view.View.VISIBLE else android.view.View.GONE
+                datePicker.visibility = if (checkedId == 2) android.view.View.GONE else android.view.View.VISIBLE
+                timePicker.visibility = if (checkedId == 2) android.view.View.GONE else android.view.View.VISIBLE
+            }
+        }
+        content.addView(typeGroup)
+
+        content.addView(datePicker)
+        content.addView(timePicker)
+        content.addView(intervalRow)
+        content.addView(TextView(ctx).apply { text = "选择日历事件："; setPadding(0, 16, 0, 8) })
+        content.addView(eventPicker)
+
+        // 初始状态：只显示日期/时间选择
+        intervalRow.visibility = android.view.View.GONE
+        eventPicker.visibility = android.view.View.GONE
+
+        root.addView(content)
+
+        AlertDialog.Builder(ctx)
+            .setTitle("设置定时触发")
+            .setView(root)
+            .setPositiveButton("确定") { _, _ ->
+                val task = when (selectedType) {
+                    0 -> {
+                        // 一次性
+                        val trigger = buildTimeMillis(datePicker, timePicker)
+                        if (trigger <= System.currentTimeMillis()) {
+                            Toast.makeText(ctx, "触发时间必须晚于当前时间", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
                         ScheduleTask(
                             id = UUID.randomUUID().toString(), recordId = recordId,
-                            name = "日历事件", type = ScheduleTask.ScheduleType.CALENDAR,
-                            triggerAtMillis = now + 60_000, calendarEventId = calId
+                            name = "一次:${formatTime(trigger)}", type = ScheduleTask.ScheduleType.ONCE,
+                            triggerAtMillis = trigger
+                        )
+                    }
+                    1 -> {
+                        // 间隔重复
+                        val intervalMin = intervalInput.text.toString().toLongOrNull() ?: 0L
+                        if (intervalMin <= 0) {
+                            Toast.makeText(ctx, "请输入有效的间隔分钟数", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        val trigger = buildTimeMillis(datePicker, timePicker)
+                        if (trigger <= System.currentTimeMillis()) {
+                            Toast.makeText(ctx, "首次触发时间必须晚于当前时间", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        ScheduleTask(
+                            id = UUID.randomUUID().toString(), recordId = recordId,
+                            name = "重复:${intervalMin}分钟", type = ScheduleTask.ScheduleType.INTERVAL,
+                            triggerAtMillis = trigger, intervalMillis = intervalMin * 60_000
+                        )
+                    }
+                    else -> {
+                        // 日历事件
+                        if (calendarEvents.isEmpty()) {
+                            Toast.makeText(ctx, "没有可选的日历事件", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        val event = calendarEvents[selectedEventIdx]
+                        ScheduleTask(
+                            id = UUID.randomUUID().toString(), recordId = recordId,
+                            name = "日历:${event.title}", type = ScheduleTask.ScheduleType.CALENDAR,
+                            triggerAtMillis = event.begin, calendarEventId = event.id
                         )
                     }
                 }
-                val ok = ScheduleManager(this).schedule(task)
+                val ok = ScheduleManager(ctx).schedule(task)
                 Toast.makeText(
-                    this,
-                    if (ok) "定时任务已创建" else "创建失败：缺少精确闹钟权限",
-                    Toast.LENGTH_SHORT
+                    ctx,
+                    if (ok) "定时任务已创建：${task.name}" else "创建失败：缺少精确闹钟权限",
+                    Toast.LENGTH_LONG
                 ).show()
                 renderTasks()
             }
+            .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun buildTimeMillis(dp: android.widget.DatePicker, tp: android.widget.TimePicker): Long {
+        return Calendar.getInstance().apply {
+            set(dp.year, dp.month, dp.dayOfMonth, tp.hour, tp.minute, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    private fun formatTime(millis: Long): String {
+        return java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(millis))
     }
 
     private fun renderTasks() {
@@ -271,16 +398,28 @@ class MainActivity : AppCompatActivity() {
             })
             return
         }
+        val sdf = java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
         tasks.forEach { task ->
             val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
+                orientation = LinearLayout.VERTICAL
                 setPadding(0, 8, 0, 8)
             }
+            val typeText = when (task.type) {
+                ScheduleTask.ScheduleType.ONCE -> "一次性"
+                ScheduleTask.ScheduleType.INTERVAL -> "间隔 ${task.intervalMillis / 60_000} 分钟"
+                ScheduleTask.ScheduleType.CALENDAR -> "日历事件"
+            }
+            val status = if (task.enabled) "✓ 启用" else "✗ 已禁用"
             row.addView(TextView(this).apply {
-                text = "${task.name} [${task.type}] ${if (task.enabled) "启用" else "已禁用"}"
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f)
+                text = "${task.name}  ·  $typeText  ·  $status"
             })
-            row.addView(Button(this).apply {
+            row.addView(TextView(this).apply {
+                text = "触发时间：${sdf.format(java.util.Date(task.triggerAtMillis))}"
+                setTextColor(android.graphics.Color.GRAY)
+                textSize = 12f
+            })
+            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            actions.addView(Button(this).apply {
                 text = "取消"
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 setOnClickListener {
@@ -288,6 +427,15 @@ class MainActivity : AppCompatActivity() {
                     renderTasks()
                 }
             })
+            actions.addView(Button(this).apply {
+                text = "删除"
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                setOnClickListener {
+                    RecordStore.get(this@MainActivity).deleteTask(task.id)
+                    renderTasks()
+                }
+            })
+            row.addView(actions)
             container.addView(row)
         }
     }

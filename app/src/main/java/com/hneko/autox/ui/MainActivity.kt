@@ -38,15 +38,9 @@ class MainActivity : AppCompatActivity() {
     private val executor = OperationExecutor()
     private var replayJob: Job? = null
 
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            refreshPermissionStatus()
-        }
-
-    private val calendarPermissionLauncher =
+    private val multiPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             refreshPermissionStatus()
-            Toast.makeText(this, "日历权限已更新", Toast.LENGTH_SHORT).show()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,15 +76,26 @@ class MainActivity : AppCompatActivity() {
     private fun state(ok: Boolean) = if (ok) "✓ 已授权" else "✗ 未授权"
 
     private fun requestAllPermissions() {
-        // 悬浮窗
-        if (!PermissionHelper.hasOverlayPermission(this)) {
-            PermissionHelper.requestOverlayPermission(this)
-        }
-        // 通知
+        // 收集需要申请的运行时权限，一次性请求（避免多次请求冲突）
+        val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             !PermissionHelper.hasNotificationPermission(this)
         ) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            needed.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            needed.add(Manifest.permission.READ_CALENDAR)
+            needed.add(Manifest.permission.WRITE_CALENDAR)
+        }
+        if (needed.isNotEmpty()) {
+            multiPermissionLauncher.launch(needed.toTypedArray())
+        }
+
+        // 悬浮窗
+        if (!PermissionHelper.hasOverlayPermission(this)) {
+            PermissionHelper.requestOverlayPermission(this)
         }
         // 忽略电池优化
         if (!PermissionHelper.isIgnoringBatteryOptimizations(this)) {
@@ -112,14 +117,6 @@ class MainActivity : AppCompatActivity() {
             PermissionHelper.requestShizukuPermission()
         } else if (!PermissionHelper.isShizukuAvailable()) {
             Toast.makeText(this, "Shizuku 未运行，请先启动 Shizuku 应用", Toast.LENGTH_LONG).show()
-        }
-        // 日历
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            calendarPermissionLauncher.launch(
-                arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
-            )
         }
         refreshPermissionStatus()
     }

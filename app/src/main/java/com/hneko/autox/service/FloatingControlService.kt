@@ -222,7 +222,9 @@ class FloatingControlService : Service() {
 
         recordBtn.setOnClickListener {
             if (recordingManager.start()) {
-                Toast.makeText(this, "开始录制", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "开始录制（面板已收起，请操作屏幕）", Toast.LENGTH_SHORT).show()
+                // 录制时自动收起控制面板，让触摸事件传递给底层应用
+                removePanel()
             } else {
                 Toast.makeText(this, "录制启动失败：请开启无障碍或 Shizuku", Toast.LENGTH_LONG).show()
             }
